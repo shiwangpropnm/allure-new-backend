@@ -68,4 +68,6 @@ public class CardServiceImpl implements CardService {
 		return new GetTopPicksResponseDTO(topPicksDTOs);
 	}
 
+	
+	
 }

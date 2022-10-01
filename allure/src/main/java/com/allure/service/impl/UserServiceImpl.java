@@ -5,10 +5,11 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.NoSuchElementException;
-
+import com.twilio.rest.api.v2010.account.Message;
 import javax.transaction.Transactional;
 
 import org.apache.commons.io.FilenameUtils;
+import org.apache.http.HttpResponse;
 import org.mapstruct.factory.Mappers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,6 +29,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.allure.constants.DistanceUnit;
 import com.allure.constants.DpUploadType;
+import com.allure.constants.EmailType;
 import com.allure.constants.Interests;
 import com.allure.constants.LoginType;
 import com.allure.constants.OTPVerificationType;
@@ -100,12 +102,16 @@ import com.allure.mapper.PreferGenderMapper;
 import com.allure.mapper.PreferHairColorMapper;
 import com.allure.mapper.UserMapper;
 import com.allure.mapper.UserSettingMapper;
+import com.allure.model.SmsRequestModel;
 import com.allure.service.CommonService;
 import com.allure.service.EmailService;
 import com.allure.service.ObjectStoreService;
 import com.allure.service.UserService;
 import com.allure.util.CommonUtils;
 import com.allure.util.JwtTokenUtil;
+import com.allure.util.SmsUtil;
+
+import kong.unirest.Unirest;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -203,6 +209,9 @@ public class UserServiceImpl implements UserService {
 
 	@Value("${allure.default.dp.url}")
 	private String defaultDpUrl;
+	
+	@Autowired
+	SmsUtil sms;
 
 	@Override
 	public String[] getDpUrls(int loggedInUserId) {
@@ -782,11 +791,14 @@ public class UserServiceImpl implements UserService {
 		}
 
 		int otp = CommonUtils.generateOTP();
+		SmsRequestModel sm=new SmsRequestModel();
+		sm.setMobileNumber(mobile);
+		sm.setMessage(EmailType.SMS_MESSAGE.getType().concat(Integer.toString(otp)));
+		Message msg=sms.sendSms(sm);
 		user.setMobile(mobile);
 		user.setOtp(otp);
 		user.setOtpVerified(false);
 		usersRepository.save(user);
-
 		return new RegisterMobileResponseDTO(user.getId(), otp);
 	}
 
@@ -910,6 +922,10 @@ public class UserServiceImpl implements UserService {
 				throw new InvalidDetailsException(
 						messageSource.getMessage("exception.invalid.user.details", null, Locale.ENGLISH));
 			}
+			SmsRequestModel sm=new SmsRequestModel();
+			sm.setMobileNumber(user.getMobile());
+			sm.setMessage(EmailType.SMS_MESSAGE.getType().concat(Integer.toString(otp)));
+			Message msg=sms.sendSms(sm);
 			user.setOtp(otp);
 			user.setOtpVerified(false);
 			usersRepository.save(user);
