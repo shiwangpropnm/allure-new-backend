@@ -2,6 +2,7 @@ package com.allure.util;
 
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Random;
 
 import org.springframework.beans.factory.annotation.Value;
 
@@ -10,7 +11,8 @@ import com.allure.constants.DistanceUnit;
 public class CommonUtils {
 
 	public static int generateOTP() {
-		return 12345;
+		Random r = new Random( System.currentTimeMillis() );
+	    return ((1 + r.nextInt(2)) * 10000 + r.nextInt(10000));
 	}
 
 	public static double getDistanceBetweenTwoLocations(double lat1, double lon1, double lat2, double lon2, DistanceUnit unit) {
